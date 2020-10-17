@@ -24,16 +24,10 @@ my_location = Coord(0, 0)
 destinations = []
 
 
-'''
-[[Coord(2, 3), Coord(9, 8)],
- [Coord(12, 9), Coord(4, 14)]]
-'''
-
-
 class TaskPlanner():
 
-    def plan_route(self, points):
-        list_coords = points
+    def plan_route(self, list_set):
+        coord_pairs = list_set
 
         waypoints = []
         
@@ -41,34 +35,35 @@ class TaskPlanner():
 
         min_dist = float('inf')
         min_index = -1
-        for i in range(len(list_coords)):
+        for i in range(len(coord_pairs)):
 
-            dist = self.calculate_distance(start, list_coords[i][0])
+            dist = self.calculate_distance(start, coord_pairs[i][0])
             if dist < min_dist:
                 min_dist = dist
                 min_index = i
 
-        waypoints.append(list_coords[min_index][0])
-        waypoints.append(list_coords[min_index][1])
+        waypoints.append(coord_pairs[min_index][0])
+        waypoints.append(coord_pairs[min_index][1])
 
-        start = list_coords[min_index][1]
-        list_coords.pop(min_index)
+        start = coord_pairs[min_index][1]
+        coord_pairs.pop(min_index)
 
-        while len(list_coords) > 0:
+        while len(coord_pairs) > 0:
 
             min_dist = float('inf')
             min_index = -1
 
-            for i in range(len(list_coords)):
-                dist = self.calculate_distance(start, list_coords[i][0])
+            for i in range(len(coord_pairs)):
+                dist = self.calculate_distance(start, coord_pairs[i][0])
                 if dist < min_dist:
                     min_dist = dist
                     min_index = i
             
-            waypoints.append(list_coords[min_index][0])
-            waypoints.append(list_coords[min_index][1])
-            start = list_coords[min_index][1]
-            list_coords.pop(min_index)
+            waypoints.append(coord_pairs[min_index][0])
+            waypoints.append(coord_pairs[min_index][1])
+            
+            start = coord_pairs[min_index][1]
+            coord_pairs.pop(min_index)
 
         for i in range(len(waypoints)):
             waypoints[i].print_coord()
