@@ -176,9 +176,7 @@ class Navigation():
         self.velocity_pub = rospy.Publisher('/cmd_vel_mux/input/navi', Twist, queue_size = 10)
         self.support = Support()
     
-    '''
-    Return angle of rotation in degrees
-    '''
+    #Return angle of rotation in degrees
     def get_rotation_angle(self, destination):
         global my_location
         global yaw
@@ -279,8 +277,6 @@ def init_control_node():
     
     points = [[Coord(2, 3), Coord(4, 5)],
               [Coord(2, 6), Coord(1, 1)]]
-    
-    #points = [[Coord(3, 3), Coord(0, 0)]]
 
     busy_bool = Bool()
     busy_bool.data = False
