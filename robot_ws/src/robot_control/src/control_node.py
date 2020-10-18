@@ -7,6 +7,8 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Bool
 
+from tf.transformations import euler_from_quaternion, quaternion_from_euler
+
 # Speed ft/s
 LINEAR_SPEED_DEFAULT = 0.5
 # Rotation speed rad ft/s 
@@ -23,6 +25,7 @@ class Coord():
 
 
 my_location = Coord(0, 0)
+yaw = 0.0
 waypoints = []
 
 
@@ -34,14 +37,17 @@ class Odom():
         
     def odom_callback(self, data):
         global my_location
+        global yaw
 
-        x = self.support.meters_to_feet(round(data.pose.pose.position.x, 2))
-        y = self.support.meters_to_feet(round(-data.pose.pose.position.y, 2))
+        y = self.support.meters_to_feet(round(data.pose.pose.position.x, 2))
+        x = self.support.meters_to_feet(round(-data.pose.pose.position.y, 2))
 
         my_location = Coord(x, y)
-        #print(my_location.print_coord())
-        print(data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z)
 
+        orientation_q = data.pose.pose.orientation
+        orientation_list = [orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w]
+        (roll, pitch, yaw_rad) = euler_from_quaternion (orientation_list)
+        yaw = -math.degrees(yaw_rad)
 
 
 class Plan():
@@ -95,8 +101,6 @@ class Plan():
 
         return waypoints
 
-
-
 class Support():
 
     def calculate_distance(self, coord1, coord2):
@@ -118,16 +122,18 @@ class Navigation():
         self.waypoint_index = 0
         self.velocity_pub = rospy.Publisher('/cmd_vel_mux/input/navi', Twist, queue_size = 10)
         self.support = Support()
-
-
+    
+    '''
+    Return angle of rotation in degrees
+    '''
     def get_rotation_angle(self, destination):
         global my_location
-        print('My Coordinate: ' + my_location.print_coord())
+        global yaw
+
+        #print('My Coordinate: ' + my_location.print_coord())
 
         delta_x = destination.x - my_location.x
         delta_y = destination.y - my_location.y
-
-        #print('deltaX: ' + str(delta_x))
 
         angle = 0
 
@@ -145,90 +151,79 @@ class Navigation():
                 angle = 90
         else:
             angle = math.degrees(math.atan2(delta_x, delta_y))
-            if delta_x < 0:
+            '''
+            if delta_y < 0:
                 print('Target behind us')
                 angle += 180
+            '''
         
-        return angle#math.radians(angle)
+        return angle - yaw#math.radians(angle)
 
     # Turns towards target pos
     def rotate_to_angle(self, waypoints):
-        print('Rotating to ' + waypoints[self.waypoint_index].print_coord())
+        #print('Rotating to ' + waypoints[self.waypoint_index].print_coord())
+        #print('yaw ' +  str(yaw))
 
         # Rotating
         t0 = rospy.Time.now().to_sec()
         current_angle = 0
-        target_angle = -self.get_rotation_angle(waypoints[self.waypoint_index])
+        # Flip turn angle: positive turns right, negative turns left
+        target_angle = self.get_rotation_angle(waypoints[self.waypoint_index])
+        print('Target angle: ' + str(target_angle))
         
-        print('Rotating ' + str(round(target_angle, 2)))
+        #print('Rotating ' + str(round(target_angle, 2)))
 
         # Determine the direction to turn
         turn_msg = Twist()
         if target_angle >= 0:
-            turn_msg.angular.z = ANGULAR_SPEED_DEFAULT
-        else:
             turn_msg.angular.z = -ANGULAR_SPEED_DEFAULT
+        else:
+            turn_msg.angular.z = ANGULAR_SPEED_DEFAULT
 
         while current_angle < abs(target_angle):    
             self.velocity_pub.publish(turn_msg)
             t1 = rospy.Time.now().to_sec()
             current_angle = math.degrees(ANGULAR_SPEED_DEFAULT) * (t1 - t0)  
-            print(current_angle)
 
     # The big move func... working on move_small as replacement
     def move_dist(self, waypoints):
         dist_diff = self.support.calculate_distance(my_location, waypoints[self.waypoint_index])
         while dist_diff > 1:
+            
+            # Rotating
+            self.rotate_to_angle(waypoints)
+            rospy.sleep(1)
+
             vel_msg = Twist()
             vel_msg.linear.x = self.support.feet_to_meters(LINEAR_SPEED_DEFAULT)
             self.velocity_pub.publish(vel_msg)
+            rospy.sleep(0.5)
+            
+
             dist_diff = self.support.calculate_distance(my_location, waypoints[self.waypoint_index])
             #print('Dist diff: ' + str(dist_diff))
-
-    # Small movements, prob call rotate_to_angle in here after moving the small amount
-    def move_small(self, waypoints):
-        dist_moved = 0
-        dist_diff_start = self.support.calculate_distance(my_location, waypoints[self.waypoint_index])
-        if dist_diff_start > 1:
-            # Do check here to see if moving away...
-            # break out and increment coord index..
-            while abs(dist_moved) < 1:
-                vel_msg = Twist()
-                vel_msg.linear.x = self.support.feet_to_meters(LINEAR_SPEED_DEFAULT)
-                self.velocity_pub.publish(vel_msg)
-                dist_moved = dist_diff_start - self.support.calculate_distance(my_location, waypoints[self.waypoint_index])
-        vel_msg = Twist()
-        vel_msg.linear.x = 0
-        self.velocity_pub.publish(vel_msg)
 
     def navigate(self, waypoints):
         global my_location
 
         # Assuming robot faces forward (+y direction) at 0,0 initially
-
         while self.waypoint_index < len(waypoints):
-
-            rospy.sleep(1)
-
-            self.rotate_to_angle(waypoints)
-
-            #my_location = waypoints[self.waypoint_index]
+            print('Heading to ' + waypoints[self.waypoint_index].print_coord())
+            
             rospy.sleep(1)
             
-            # Move   
-            # Change to move small...
             self.move_dist(waypoints)
             # Do checks for walls in move_small too?
             # Call rotate_to_angle in move small as well?
 
-            '''
-            dist_diff = self.support.calculate_distance(my_location, waypoints[self.waypoint_index])
-            while dist_diff > 1:
-               self.move_small(waypoints)   
-            '''
+            print(my_location.print_coord())
+            print('Arrived at: ' + waypoints[self.waypoint_index].print_coord())
 
             self.waypoint_index += 1
             rospy.sleep(1)
+        
+        print('Finished')
+        print(my_location.print_coord())
 
 def init_control_node():
     rospy.init_node('control_node', anonymous = False)
@@ -237,13 +232,15 @@ def init_control_node():
     planner = Plan()
     navigator = Navigation()
     odom = Odom()
-
-    points = [[Coord(2, 3), Coord(9, 8)],
-              [Coord(12, 9), Coord(4, 14)]]
+    
+    points = [[Coord(2, 3), Coord(4, 5)],
+              [Coord(2, 6), Coord(1, 1)]]
+    
+    #points = [[Coord(3, 3), Coord(0, 0)]]
 
     busy_bool = Bool()
     busy_bool.data = False
-    busy_pub = rospy.Publisher('/robot/some_bool_to_tell_us_to_get_input', busy_bool,queue_size=10)
+    #busy_pub = rospy.Publisher('/robot/some_bool_to_tell_us_to_get_input', busy_bool,queue_size=10)
 
     waypoints = planner.plan_route(points)
 
@@ -251,7 +248,6 @@ def init_control_node():
 
 
 if __name__ == '__main__':
-    
     try:
         init_control_node()
     except rospy.ROSInterruptException:
