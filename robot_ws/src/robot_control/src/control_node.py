@@ -4,6 +4,7 @@ import rospy
 import math
 
 from geometry_msgs.msg import Twist
+from nav_msgs.msg import Odometry
 
 # Speed ft/s
 LINEAR_SPEED_DEFAULT = 0.5
@@ -24,6 +25,18 @@ my_location = Coord(0, 0)
 waypoints = []
 
 
+class Odom():
+    def __init__(self):
+        self.velocity_pub = rospy.Publisher('/cmd_vel_mux/input/navi', Twist, queue_size = 10)
+        self.odom_sub = rospy.Subscriber('odom', Odometry, odom_callback)
+    
+    def odom_callback(self, data):
+        global my_location
+
+        x = data.pose.pose.position.x
+        y = data.pose.pose.position.y
+
+        my_location = Coord(x, y)
 
 
 
@@ -153,14 +166,19 @@ class Navigation():
             else:
                 turn_msg.angular.z = -ANGULAR_SPEED_DEFAULT
 
-            
             while current_angle < abs(target_angle):
                 
                 self.velocity_pub.publish(turn_msg)
                 t1 = rospy.Time.now().to_sec()
                 current_angle = math.degrees(ANGULAR_SPEED_DEFAULT) * (t1 - t0)        
             
-            my_location = waypoints[self.waypoint_index]
+            #my_location = waypoints[self.waypoint_index]
+
+
+            
+
+
+
             self.waypoint_index += 1
 
             rospy.sleep(1)
@@ -175,7 +193,6 @@ class Navigation():
 def init_control_node():
     rospy.init_node('control_node', anonymous = False)
     rate = rospy.Rate(10)
-    time.sleep(1)
 
     planner = Plan()
     navigator = Navigation()
