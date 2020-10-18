@@ -2,14 +2,12 @@
 
 import rospy
 import math
-import time
-import sys
 
 from geometry_msgs.msg import Twist
 
 # Speed ft/s
 LINEAR_SPEED_DEFAULT = 0.5
-# Rotation speed ft/s
+# Rotation speed rad ft/s 
 ANGULAR_SPEED_DEFAULT = 0.4
 
 class Coord():
@@ -161,10 +159,11 @@ class Navigation():
                 self.velocity_pub.publish(turn_msg)
                 t1 = rospy.Time.now().to_sec()
                 current_angle = math.degrees(ANGULAR_SPEED_DEFAULT) * (t1 - t0)        
-                #print(current_angle)
             
             my_location = waypoints[self.waypoint_index]
-            self.waypoint_index = self.waypoint_index + 1
+            self.waypoint_index += 1
+
+            rospy.sleep(1)
 
         
         
