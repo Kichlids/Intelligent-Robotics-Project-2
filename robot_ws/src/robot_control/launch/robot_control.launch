@@ -12,7 +12,7 @@
         <arg name="use_sim_time" value="true"/>
         <arg name="debug" value="false"/>
         <arg name="gui" value="$(arg gui)" />
-        <arg name="world_name" value="$(find robot_control)/world/Project1World"/>
+        <arg name="world_name" value="$(find robot_control)/world/Project2World"/>
     </include>
 
     <include file="$(find turtlebot_gazebo)/launch/includes/$(arg base).launch.xml">
@@ -36,8 +36,10 @@
         <remap from="scan" to="/scan"/>
     </node>
 
+    <!--
     <node pkg="robot_control" name="control_node" type="control_node.py" output="screen"/> 
 
     <node pkg="robot_control" name="teleop_node" type="teleop_node.py" output="screen"/> 
-
+    -->
+    
 </launch>
