@@ -8,7 +8,6 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from tf.transformations import euler_from_quaternion
 
-
 # Speed ft/s
 LINEAR_SPEED_DEFAULT = 0.5
 # Rotation speed ft/s
