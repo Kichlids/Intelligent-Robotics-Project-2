@@ -175,12 +175,12 @@ class Navigation():
             else:
                 turn_msg.angular.z = -ANGULAR_SPEED_DEFAULT
 
-            while current_angle < abs(target_angle):
+            while current_angle < abs(target_angle)
                 
                 self.velocity_pub.publish(turn_msg)
                 t1 = rospy.Time.now().to_sec()
                 current_angle = math.degrees(ANGULAR_SPEED_DEFAULT) * (t1 - t0)  
-                #print(current_angle)      
+                print(current_angle)      
 
             #my_location = waypoints[self.waypoint_index]
             rospy.sleep(1)
@@ -193,7 +193,7 @@ class Navigation():
                 vel_msg.linear.x = self.support.feet_to_meters(LINEAR_SPEED_DEFAULT)
                 self.velocity_pub.publish(vel_msg)
                 dist_diff = self.support.calculate_distance(my_location, waypoints[self.waypoint_index])
-                print('Dist diff: ' + str(dist_diff))
+                #print('Dist diff: ' + str(dist_diff))
 
             self.waypoint_index += 1
             rospy.sleep(1)
