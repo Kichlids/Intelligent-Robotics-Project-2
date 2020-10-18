@@ -9,7 +9,7 @@ from nav_msgs.msg import Odometry
 # Speed ft/s
 LINEAR_SPEED_DEFAULT = 0.5
 # Rotation speed rad ft/s 
-ANGULAR_SPEED_DEFAULT = 0.4
+ANGULAR_SPEED_DEFAULT = 0.1
 
 class Coord():
 
@@ -27,22 +27,29 @@ waypoints = []
 
 class Odom():
     def __init__(self):
+        self.support = Support()
         self.velocity_pub = rospy.Publisher('/cmd_vel_mux/input/navi', Twist, queue_size = 10)
-        self.odom_sub = rospy.Subscriber('odom', Odometry, odom_callback)
-    
+        self.odom_sub = rospy.Subscriber('odom', Odometry, self.odom_callback)
+        
     def odom_callback(self, data):
         global my_location
 
-        x = data.pose.pose.position.x
-        y = data.pose.pose.position.y
+        x = self.support.meters_to_feet(round(data.pose.pose.position.x, 2))
+        y = self.support.meters_to_feet(round(-data.pose.pose.position.y, 2))
 
         my_location = Coord(x, y)
+        #print(my_location.print_coord())
 
 
 
 class Plan():
-    global my_location
+
+    def __init__(self):
+        self.support = Support()
+
     def plan_route(self, list_set):
+        global my_location
+
         coord_pairs = list_set
 
         waypoints = []
@@ -53,7 +60,7 @@ class Plan():
         min_index = -1
         for i in range(len(coord_pairs)):
 
-            dist = self.calculate_distance(start, coord_pairs[i][0])
+            dist = self.support.calculate_distance(start, coord_pairs[i][0])
             if dist < min_dist:
                 min_dist = dist
                 min_index = i
@@ -70,7 +77,7 @@ class Plan():
             min_index = -1
 
             for i in range(len(coord_pairs)):
-                dist = self.calculate_distance(start, coord_pairs[i][0])
+                dist = self.support.calculate_distance(start, coord_pairs[i][0])
                 if dist < min_dist:
                     min_dist = dist
                     min_index = i
@@ -86,12 +93,13 @@ class Plan():
 
         return waypoints
 
-    def calculate_distance(self, coord1, coord2):
-        dist = ((coord1.x - coord2.x) ** 2 + (coord1.y - coord2.y) ** 2) ** (0.5)
-        return dist
 
 
 class Support():
+
+    def calculate_distance(self, coord1, coord2):
+        dist = ((coord1.x - coord2.x) ** 2 + (coord1.y - coord2.y) ** 2) ** (0.5)
+        return dist
 
     # Convert meters to feet
     def meters_to_feet(self, val):
@@ -117,8 +125,7 @@ class Navigation():
         delta_x = destination.x - my_location.x
         delta_y = destination.y - my_location.y
 
-        print(delta_x)
-        print(delta_y)
+        #print('deltaX: ' + str(delta_x))
 
         angle = 0
 
@@ -136,7 +143,7 @@ class Navigation():
                 angle = 90
         else:
             angle = math.degrees(math.atan2(delta_x, delta_y))
-            if delta_y < 0:
+            if delta_x < 0:
                 print('Target behind us')
                 angle += 180
         
@@ -150,12 +157,14 @@ class Navigation():
 
         while self.waypoint_index < len(waypoints):
 
-            print('Moving to ' + waypoints[self.waypoint_index].print_coord())
+            rospy.sleep(1)
+
+            print('Rotating to ' + waypoints[self.waypoint_index].print_coord())
 
             # Rotating
             t0 = rospy.Time.now().to_sec()
             current_angle = 0
-            target_angle = self.get_rotation_angle(waypoints[self.waypoint_index])
+            target_angle = -self.get_rotation_angle(waypoints[self.waypoint_index])
             
             print('Rotating ' + str(round(target_angle, 2)))
 
@@ -170,19 +179,25 @@ class Navigation():
                 
                 self.velocity_pub.publish(turn_msg)
                 t1 = rospy.Time.now().to_sec()
-                current_angle = math.degrees(ANGULAR_SPEED_DEFAULT) * (t1 - t0)        
-            
+                current_angle = math.degrees(ANGULAR_SPEED_DEFAULT) * (t1 - t0)  
+                #print(current_angle)      
+
             #my_location = waypoints[self.waypoint_index]
-
-
+            rospy.sleep(1)
             
+            # Move
 
-
+            dist_diff = self.support.calculate_distance(my_location, waypoints[self.waypoint_index])
+            while dist_diff > 1:
+                vel_msg = Twist()
+                vel_msg.linear.x = self.support.feet_to_meters(LINEAR_SPEED_DEFAULT)
+                self.velocity_pub.publish(vel_msg)
+                dist_diff = self.support.calculate_distance(my_location, waypoints[self.waypoint_index])
+                print('Dist diff: ' + str(dist_diff))
 
             self.waypoint_index += 1
-
             rospy.sleep(1)
-
+            
         
         
 
@@ -196,6 +211,7 @@ def init_control_node():
 
     planner = Plan()
     navigator = Navigation()
+    odom = Odom()
 
     points = [[Coord(2, 3), Coord(9, 8)],
               [Coord(12, 9), Coord(4, 14)]]
