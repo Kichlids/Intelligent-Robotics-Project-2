@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
+import math
 
 from geometry_msgs.msg import Twist
 
@@ -21,10 +22,10 @@ class Coord():
 
 
 my_location = Coord(0, 0)
-destinations = []
+waypoints = []
 
 
-class TaskPlanner():
+class Plan():
 
     def plan_route(self, list_set):
         coord_pairs = list_set
@@ -76,6 +77,60 @@ class TaskPlanner():
         return dist
 
 
+class Navigation():
+
+    def __init__(self):
+        waypoint_index = 0\
+
+    def get_rotation_angle(self, destination):
+        delta_x = destination.x - my_location.x
+        delta_y = destination.y = my_location.y
+
+        angle = 0
+
+        if delta_x == 0:
+            # Target ahead or behind us
+            if delta_y > 0:
+                angle = 0
+            elif delta_y < 0:
+                angle = 180
+        
+        elif delta_y == 0:
+            # Target to the left or right of us
+            if delta_x > 0:
+                angle = 90
+            elif delta_x < 0:
+                angle = -90
+        else:
+            angle = math.atan2(delta_x, delta_
+
+    def navigate(self, waypoints):
+        # Assuming robot faces forward (+y direction) at 0,0 initially
+
+        while waypoint_index < len(waypoints):
+
+            # Turn
+            delta_x = waypoints[waypoint_index].x - my_location.x
+            delta_y = waypoints[waypoint_index].y - my_location.y
+            
+
+            if delta_x == 0:
+                # Target ahead or behind us
+                if delta_y > 0:
+                    angle = 0
+                elif delta_y < 0:
+                    angle = 180
+            
+            elif delta_y == 0:
+                # Target to the left or right of us
+                if delta_x > 0:
+                    angle = 90
+                elif delta_x < 0:
+                    angle = -90
+
+
+            if delta_y < 0:
+
 
 
 
@@ -86,7 +141,7 @@ def init_control_node():
     rospy.init_node('control_node', anonymous = False)
     rate = rospy.Rate(10)
 
-    planner = TaskPlanner()
+    planner = Plan()
 
     points = [[Coord(2, 3), Coord(9, 8)],
               [Coord(12, 9), Coord(4, 14)]]
