@@ -3,15 +3,14 @@
 import rospy
 import math
 import time
+import sys
 
 from geometry_msgs.msg import Twist
-from nav_msgs.msg import Odometry
-from tf.transformations import euler_from_quaternion
 
 # Speed ft/s
 LINEAR_SPEED_DEFAULT = 0.5
 # Rotation speed ft/s
-ANGULAR_SPEED_DEFAULT = 3
+ANGULAR_SPEED_DEFAULT = 0.4
 
 class Coord():
 
@@ -20,7 +19,7 @@ class Coord():
         self.y = y
     
     def print_coord(self):
-        print(str(self.x) + ', ' + str(self.y))
+        return str(self.x) + ', ' + str(self.y)
 
 
 my_location = Coord(0, 0)
@@ -31,7 +30,7 @@ waypoints = []
 
 
 class Plan():
-
+    global my_location
     def plan_route(self, list_set):
         coord_pairs = list_set
 
@@ -91,36 +90,24 @@ class Support():
     def feet_to_meters(self, val):
         return val / 3.28
 
-    # Convert radians to degrees
-    def rad_to_deg(self, rad):
-        return rad * 180 / math.pi
-
 
 class Navigation():
 
     def __init__(self):
         self.waypoint_index = 0
-        self.odom_sub = rospy.Subscriber('/odom', Odometry, self.odom_rotation_callback)
         self.velocity_pub = rospy.Publisher('/cmd_vel_mux/input/navi', Twist, queue_size = 10)
         self.support = Support()
-        self.yaw = 0
-
-
-
-    def odom_rotation_callback(self, data):
-        #print('odom callback')
-        orientation_q = data.pose.pose.orientation
-        orientation_list = [orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w]
-        (roll, pitch, self.yaw) = euler_from_quaternion (orientation_list)
-        #self.yaw = yaw
-        #print(math.degrees(self.yaw))
-
-        #print(math.degrees(self.yaw))
 
 
     def get_rotation_angle(self, destination):
+        global my_location
+        print('My Coordinate: ' + my_location.print_coord())
+
         delta_x = destination.x - my_location.x
         delta_y = destination.y - my_location.y
+
+        print(delta_x)
+        print(delta_y)
 
         angle = 0
 
@@ -139,40 +126,47 @@ class Navigation():
         else:
             angle = math.degrees(math.atan2(delta_x, delta_y))
             if delta_y < 0:
+                print('Target behind us')
                 angle += 180
         
         return angle#math.radians(angle)
 
 
     def navigate(self, waypoints):
+        global my_location
+
         # Assuming robot faces forward (+y direction) at 0,0 initially
 
-        
-        # Rotating
-        t0 = 0
-        t1 = 0
-        t0 = rospy.Time.now().to_sec()
-        current_angle = 0
-        target_angle = self.get_rotation_angle(waypoints[self.waypoint_index])
-        
-        print('Rotating ' + str(round(target_angle, 2)))
+        while self.waypoint_index < len(waypoints):
 
-        # Determine the direction to turn
-        turn_msg = Twist()
-        if target_angle >= 0:
-            turn_msg.angular.z = ANGULAR_SPEED_DEFAULT
-        else:
-            turn_msg.angular.z = -ANGULAR_SPEED_DEFAULT
+            print('Moving to ' + waypoints[self.waypoint_index].print_coord())
 
-        print(current_angle)
-
-        
-        while (current_angle < abs(target_angle)):
+            # Rotating
+            t0 = rospy.Time.now().to_sec()
+            current_angle = 0
+            target_angle = self.get_rotation_angle(waypoints[self.waypoint_index])
             
-            self.velocity_pub.publish(turn_msg)
-            t1 = rospy.Time.now().to_sec()
-            current_angle = (ANGULAR_SPEED_DEFAULT) * (t1 - t0)        
-            print(current_angle)
+            print('Rotating ' + str(round(target_angle, 2)))
+
+            # Determine the direction to turn
+            turn_msg = Twist()
+            if target_angle >= 0:
+                turn_msg.angular.z = ANGULAR_SPEED_DEFAULT
+            else:
+                turn_msg.angular.z = -ANGULAR_SPEED_DEFAULT
+
+            
+            while current_angle < abs(target_angle):
+                
+                self.velocity_pub.publish(turn_msg)
+                t1 = rospy.Time.now().to_sec()
+                current_angle = math.degrees(ANGULAR_SPEED_DEFAULT) * (t1 - t0)        
+                #print(current_angle)
+            
+            my_location = waypoints[self.waypoint_index]
+            self.waypoint_index = self.waypoint_index + 1
+
+        
         
 
 
@@ -182,6 +176,7 @@ class Navigation():
 def init_control_node():
     rospy.init_node('control_node', anonymous = False)
     rate = rospy.Rate(10)
+    time.sleep(1)
 
     planner = Plan()
     navigator = Navigation()
@@ -195,10 +190,8 @@ def init_control_node():
 
 
 if __name__ == '__main__':
-    init_control_node()
-    '''
+    
     try:
-        
+        init_control_node()
     except rospy.ROSInterruptException:
         pass
-    '''
