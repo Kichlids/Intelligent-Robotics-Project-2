@@ -1,1 +1,1 @@
-coordinate[] coord_list
+robot_msgs/coordinate[] coord_list
