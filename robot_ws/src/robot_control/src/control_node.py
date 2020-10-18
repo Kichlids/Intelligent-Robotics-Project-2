@@ -14,6 +14,9 @@ LINEAR_SPEED_DEFAULT = 0.5
 # Rotation speed rad ft/s 
 ANGULAR_SPEED_DEFAULT = 0.1
 
+# Obstacle avoidance threshold in ft, including the position of the laser scan sensor
+LASER_AVOIDANCE_DISTANCE = 1.5
+
 class Coord():
 
     def __init__(self, x, y):
@@ -49,6 +52,57 @@ class Odom():
         (roll, pitch, yaw_rad) = euler_from_quaternion (orientation_list)
         yaw = -math.degrees(yaw_rad)
 
+class Laser():
+
+    def __init__(self):
+        self.support = Support()
+
+        self.obstacle_detected = False
+        self.laser_data = LaserScan()
+        self.laser_min_index = 0
+
+        self.laser_sub = rospy.Subscriber('/scan', LaserScan, self.laser_callback)
+
+    # Find the minimum distance and its index of the ranges
+    def find_min_laser_data(self, array):
+        min_val = array[0]
+        min_index = 0
+        for i in range(len(array)):
+            if min_val > array[i]:
+                min_val = array[i]
+                min_index = i
+        
+        return min_val, min_index
+
+    # Laser Scanner callback function
+    def laser_callback(self, data):
+
+        # Convert ranges from meters to feet
+        ranges = []
+        for i in range(len(data.ranges)):
+            ranges.append(self.support.meters_to_feet(data.ranges[i]))
+
+        # Find minimum distance and index
+        min_val, min_index = self.find_min_laser_data(ranges)
+        
+        '''
+        Object detected if minimum distance is less than threshold 
+        or too close to read (nan)
+        Assume (nan) values are below threshold, as:
+        - (nan) values can either be less than range_min
+        -             "              greater than range_max
+        range_max is about 30ft. It is impossible to get reading of 30ft+ given our environment
+        So the only other possible outcome is if distance read (nan) is below range_min, or threshold
+        '''
+        if math.isnan(min_val) or min_val < LASER_AVOIDANCE_DISTANCE:
+
+            self.obstacle_detected = True
+            
+            self.laser_data = data
+            self.laser_min_index = min_index
+        # Object not detected
+        else:
+            self.obstacle_detected = False
 
 class Plan():
 
@@ -115,7 +169,6 @@ class Support():
     def feet_to_meters(self, val):
         return val / 3.28
 
-
 class Navigation():
 
     def __init__(self):
@@ -151,29 +204,21 @@ class Navigation():
                 angle = 90
         else:
             angle = math.degrees(math.atan2(delta_x, delta_y))
-            '''
-            if delta_y < 0:
-                print('Target behind us')
-                angle += 180
-            '''
         
-        return angle - yaw#math.radians(angle)
+        return angle - yaw
 
     # Turns towards target pos
     def rotate_to_angle(self, waypoints):
-        #print('Rotating to ' + waypoints[self.waypoint_index].print_coord())
-        #print('yaw ' +  str(yaw))
 
         # Rotating
         t0 = rospy.Time.now().to_sec()
         current_angle = 0
-        # Flip turn angle: positive turns right, negative turns left
+        
         target_angle = self.get_rotation_angle(waypoints[self.waypoint_index])
         print('Target angle: ' + str(target_angle))
-        
-        #print('Rotating ' + str(round(target_angle, 2)))
 
         # Determine the direction to turn
+        # Flip turn angle: positive turns right, negative turns left
         turn_msg = Twist()
         if target_angle >= 0:
             turn_msg.angular.z = -ANGULAR_SPEED_DEFAULT
@@ -185,7 +230,7 @@ class Navigation():
             t1 = rospy.Time.now().to_sec()
             current_angle = math.degrees(ANGULAR_SPEED_DEFAULT) * (t1 - t0)  
 
-    # The big move func... working on move_small as replacement
+    # Move in increments and turn
     def move_dist(self, waypoints):
         dist_diff = self.support.calculate_distance(my_location, waypoints[self.waypoint_index])
         while dist_diff > 1:
@@ -201,7 +246,6 @@ class Navigation():
             
 
             dist_diff = self.support.calculate_distance(my_location, waypoints[self.waypoint_index])
-            #print('Dist diff: ' + str(dist_diff))
 
     def navigate(self, waypoints):
         global my_location
@@ -209,7 +253,7 @@ class Navigation():
         # Assuming robot faces forward (+y direction) at 0,0 initially
         while self.waypoint_index < len(waypoints):
             print('Heading to ' + waypoints[self.waypoint_index].print_coord())
-            
+
             rospy.sleep(1)
             
             self.move_dist(waypoints)
