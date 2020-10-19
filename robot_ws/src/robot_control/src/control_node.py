@@ -331,7 +331,9 @@ def tasks_callback(data):
 
     points = []
 
-    for i in range(len(data.coord_list)):
+    for i in range(0, len(data.coord_list), 2):
+        print "i: " + str(i) + ", length: " + str(len(data.coord_list))
+
         temp = []
 
         start = Coord(data.coord_list[i].x_coord, data.coord_list[i].y_coord)
@@ -341,7 +343,6 @@ def tasks_callback(data):
         temp.append(end)
 
         points.append(temp)
-        i += 1
 
     waypoints = planner.plan_route(points)
 

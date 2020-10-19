@@ -35,6 +35,8 @@ def input_callback(data):
         print myTasks
         tasks_pub.publish(myTasks)
 
+        rospy.sleep(3)
+
 def init_input_node():
     rospy.init_node('input_node', anonymous = False)
     rate = rospy.Rate(10)
