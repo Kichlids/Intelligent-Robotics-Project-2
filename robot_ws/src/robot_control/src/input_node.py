@@ -31,10 +31,8 @@ def input_callback(data):
                 print "Input not valid as (<start_coordinates>, <end_coordinates>)"
             string_input = raw_input()
 
-        print myTasks
         tasks_pub.publish(myTasks)
-
-        rospy.sleep(3)
+        rospy.sleep(5)
 
 def init_input_node():
     rospy.init_node('input_node', anonymous = False)
@@ -44,8 +42,6 @@ def init_input_node():
 
     tasks_pub = rospy.Publisher('/robot/tasks', tasks, queue_size = 10)
     rospy.Subscriber('/robot/busy_bool', Bool, input_callback)
-
-    print "spinning"
 
     rospy.spin()
 
