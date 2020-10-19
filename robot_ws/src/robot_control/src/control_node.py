@@ -339,23 +339,11 @@ def init_control_node():
     rospy.init_node('control_node', anonymous = False)
     rate = rospy.Rate(10)
 
-    '''
-    global planner 
-    global navigator 
-    global odom
-    global points
-
-    planner = Plan()
-    navigator = Navigation()
-    odom = Odom()
-    points = []
-    '''
-    
     global busy_bool 
     busy_bool = Bool()
     busy_bool.data = False
 
-    # First time ready
+    # First time
     global busy_pub
     busy_pub = rospy.Publisher('/robot/some_bool_to_tell_us_to_get_input', Bool, queue_size=10)
     busy_pub.publish(busy_bool)
@@ -366,7 +354,6 @@ def init_control_node():
     points = [[Coord(2, 3), Coord(4, 5)],
               [Coord(2, 6), Coord(1, 1)]]
     '''
-    #points = [[Coord(3, 3), Coord(0, 0)]]
 
 if __name__ == '__main__':
     try:

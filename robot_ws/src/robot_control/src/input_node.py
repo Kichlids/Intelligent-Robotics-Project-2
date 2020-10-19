@@ -9,7 +9,7 @@ from std_msgs.msg import Bool
 def input_callback(data):
     myTasks = tasks()
 
-    if data.data:
+    if data.data == False:
         print "Input coordinates:"
         string_input = raw_input()
         while string_input != "":
