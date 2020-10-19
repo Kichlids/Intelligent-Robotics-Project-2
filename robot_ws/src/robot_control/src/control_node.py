@@ -96,6 +96,7 @@ class Laser():
         # Find minimum distance and index
         min_val, min_index = self.find_min_laser_data(ranges)
         
+        
         '''
         Object detected if minimum distance is less than threshold 
         or too close to read (nan)
@@ -106,7 +107,7 @@ class Laser():
         So the only other possible outcome is if distance read (nan) is below range_min, or threshold
         '''
         if math.isnan(min_val) or min_val < LASER_AVOIDANCE_DISTANCE:
-
+            #print(str(min_val) + ', ' + str(min_index))
             self.obstacle_detected = True
             
             self.laser_data = data
@@ -197,8 +198,6 @@ class Navigation():
         global my_location
         global yaw
 
-        #print('My Coordinate: ' + my_location.print_coord())
-
         delta_x = destination.x - my_location.x
         delta_y = destination.y - my_location.y
 
@@ -213,9 +212,9 @@ class Navigation():
         elif delta_y == 0:
             # Target to the left or right of us
             if delta_x > 0:
-                angle = -90
-            elif delta_x < 0:
                 angle = 90
+            elif delta_x < 0:
+                angle = -90
         else:
             angle = math.degrees(math.atan2(delta_x, delta_y))
         
@@ -268,13 +267,17 @@ class Navigation():
             self.min_dist_to_dest = dist_diff
         
         while dist_diff > 1:
-            
+            '''
             if self.laser.obstacle_detected:
                 # Avoid obstacle if detected
+                print('Avoiding...')
                 self.avoid()
             else:
                 # Rotate towards destination
                 self.rotate_to_angle(waypoints)
+            '''
+
+            self.rotate_to_angle(waypoints)
             
             rospy.sleep(1)
 
@@ -303,7 +306,7 @@ class Navigation():
         # Assuming robot faces forward (+y direction) at 0,0 initially
         while self.waypoint_index < len(waypoints):
             print('Heading to ' + waypoints[self.waypoint_index].print_coord())
-
+            print('From ' + my_location.print_coord())
             rospy.sleep(1)
             
             self.move_dist(waypoints)
@@ -365,7 +368,7 @@ def init_control_node():
     busy_pub = rospy.Publisher('/robot/busy_bool', Bool, queue_size=10)
     while not busy_bool.data:
         busy_pub.publish(busy_bool)
-        print "Published busy bool"
+        #print "Published busy bool"
 
     '''
     points = [[Coord(2, 3), Coord(4, 5)],
