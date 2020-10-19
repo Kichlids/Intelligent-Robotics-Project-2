@@ -8,6 +8,9 @@ from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Bool
 
+from robot_msgs.msg import coordinate
+from robot_msgs.msg import tasks
+
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
 # Speed ft/s
@@ -348,15 +351,16 @@ def init_control_node():
 
     # First time
     global busy_pub
-    busy_pub = rospy.Publisher('/robot/some_bool_to_tell_us_to_get_input', Bool, queue_size=10)
-    busy_pub.publish(busy_bool)
-
     tasks_sub = rospy.Subscriber('/robot/tasks', tasks, tasks_callback)
+    busy_pub = rospy.Publisher('/robot/busy_bool', Bool, queue_size=10)
+    busy_pub.publish(busy_bool)
+    print "Published busy bool"
 
     '''
     points = [[Coord(2, 3), Coord(4, 5)],
               [Coord(2, 6), Coord(1, 1)]]
     '''
+    rospy.spin()
 
 if __name__ == '__main__':
     try:

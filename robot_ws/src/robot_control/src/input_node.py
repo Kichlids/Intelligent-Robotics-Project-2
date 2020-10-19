@@ -7,6 +7,7 @@ from robot_msgs.msg import tasks
 from std_msgs.msg import Bool
 
 def input_callback(data):
+    print "Callbacked"
     myTasks = tasks()
 
     if data.data == False:
@@ -42,7 +43,9 @@ def init_input_node():
     global input_pub
 
     tasks_pub = rospy.Publisher('/robot/tasks', tasks, queue_size = 10)
-    input_sub = rospy.Subscriber('/robot/some_bool_to_tell_us_to_get_input', Bool, input_callback)
+    input_sub = rospy.Subscriber('/robot/busy_bool', Bool, input_callback)
+
+    rospy.spin()
 
 if __name__ == '__main__':
     try:
