@@ -80,8 +80,18 @@ class Laser():
     def find_min_laser_data(self, array):
         min_val = array[0]
         min_index = 0
+
+        #print(len(array)) # 640
+
+        if math.isnan(array[320]):
+            return array[320], 320
+        if math.isnan(array[0]):
+            return array[0], 0
+        if math.isnan(array[639]):
+            return array[639], 639
+
         for i in range(len(array)):
-            if min_val > array[i] or math.isnan(array[i]):
+            if min_val > array[i]: #or math.isnan(min_val):
                 min_val = array[i]
                 min_index = i
         
@@ -312,6 +322,8 @@ class Navigation():
             print('min_diff ' + str(self.min_dist_to_dest))
             print('T_diff ' + str(dist_diff - self.min_dist_to_dest))
             '''
+
+            
             if dist_diff - self.min_dist_to_dest > NAV_FAILURE_DISTANCE_THRESHOLD:
                 print('Failure to reach ' + str(waypoints[self.waypoint_index].to_string()))
                 if self.waypoint_index % 2 == 0:
