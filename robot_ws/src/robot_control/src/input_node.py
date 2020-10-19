@@ -7,7 +7,6 @@ from robot_msgs.msg import tasks
 from std_msgs.msg import Bool
 
 def input_callback(data):
-    #print "Callbacked"
     myTasks = tasks()
 
     if data.data == False:

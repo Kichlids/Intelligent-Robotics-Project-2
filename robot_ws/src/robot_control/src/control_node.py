@@ -34,7 +34,7 @@ class Coord():
         self.x = x
         self.y = y
     
-    def print_coord(self):
+    def to_string(self):
         return str(self.x) + ', ' + str(self.y)
 
 
@@ -162,7 +162,7 @@ class Plan():
             coord_pairs.pop(min_index)
 
         for i in range(len(waypoints)):
-            waypoints[i].print_coord()
+            waypoints[i].to_string()
 
         return waypoints
 
@@ -309,7 +309,7 @@ class Navigation():
             print('T_diff ' + str(dist_diff - self.min_dist_to_dest))
 
             if dist_diff - self.min_dist_to_dest > NAV_FAILURE_DISTANCE_THRESHOLD:
-                print('Failure to reach ' + str(waypoints[self.waypoint_index].print_coord()))
+                print('Failure to reach ' + str(waypoints[self.waypoint_index].to_string()))
                 if self.waypoint_index % 2 == 0:
                     # waypoint was start
                     self.waypoint_index += 1
@@ -320,23 +320,23 @@ class Navigation():
 
         # Assuming robot faces forward (+y direction) at 0,0 initially
         while self.waypoint_index < len(waypoints):
-            print('Heading to ' + waypoints[self.waypoint_index].print_coord())
-            print('From ' + my_location.print_coord())
+            print('Heading to ' + waypoints[self.waypoint_index].to_string())
+            print('From ' + my_location.to_string())
             rospy.sleep(1)
             
             self.move_dist(waypoints)
             # Do checks for walls in move_small too?
             # Call rotate_to_angle in move small as well?
 
-            print(my_location.print_coord())
-            print('Arrived at: ' + waypoints[self.waypoint_index].print_coord())
+            print(my_location.to_string())
+            print('Arrived at: ' + waypoints[self.waypoint_index].to_string())
 
             self.waypoint_index += 1
             self.min_dist_to_dest = float('inf')
             rospy.sleep(1)
         
         print('Finished')
-        print(my_location.print_coord())
+        print(my_location.to_string())
 
 def tasks_callback(data):
     busy_bool.data = True
