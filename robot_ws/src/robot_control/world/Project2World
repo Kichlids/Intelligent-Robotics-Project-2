@@ -300,7 +300,7 @@
         <collision name='collision'>
           <geometry>
             <box>
-              <size>1 5.99999 1</size>
+              <size>1 5.99998 1</size>
             </box>
           </geometry>
           <max_contacts>10</max_contacts>
@@ -320,7 +320,7 @@
         <visual name='visual'>
           <geometry>
             <box>
-              <size>1 5.99999 1</size>
+              <size>1 5.99998 1</size>
             </box>
           </geometry>
           <material>
@@ -488,10 +488,10 @@
       </link>
     </model>
     <state world_name='default'>
-      <sim_time>5005 620000000</sim_time>
-      <real_time>1262 146646629</real_time>
-      <wall_time>1603011047 713817235</wall_time>
-      <iterations>124658</iterations>
+      <sim_time>5051 510000000</sim_time>
+      <real_time>45 960098449</real_time>
+      <wall_time>1603084441 147154884</wall_time>
+      <iterations>4589</iterations>
       <model name='ground_plane'>
         <pose frame=''>0 0 0 0 -0 0</pose>
         <scale>1 1 1</scale>
@@ -533,10 +533,10 @@
         </link>
       </model>
       <model name='unit_box_clone_1'>
-        <pose frame=''>3 2.29286 0.5 0 -0 0</pose>
-        <scale>0.096538 0.249172 1</scale>
+        <pose frame=''>3 2.24334 0.5 0 -0 0</pose>
+        <scale>0.096538 0.264114 1</scale>
         <link name='link'>
-          <pose frame=''>3 2.29286 0.5 0 -0 0</pose>
+          <pose frame=''>3 2.24334 0.5 0 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 -9.8 0 -0 0</acceleration>
           <wrench>0 0 -9.8 0 -0 0</wrench>
@@ -588,7 +588,7 @@
     </state>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose frame=''>3.45498 -1.89543 13.2813 -0 1.1538 1.53939</pose>
+        <pose frame=''>3.39652 1.09779 3.38045 -0 1.1538 1.53939</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
       </camera>
