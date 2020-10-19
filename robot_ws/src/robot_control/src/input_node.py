@@ -40,10 +40,11 @@ def init_input_node():
     rate = rospy.Rate(10)
 
     global tasks_pub
-    global input_pub
 
     tasks_pub = rospy.Publisher('/robot/tasks', tasks, queue_size = 10)
-    input_sub = rospy.Subscriber('/robot/busy_bool', Bool, input_callback)
+    rospy.Subscriber('/robot/busy_bool', Bool, input_callback)
+
+    print "spinning"
 
     rospy.spin()
 

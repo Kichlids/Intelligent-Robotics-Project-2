@@ -331,8 +331,17 @@ def tasks_callback(data):
 
     points = []
 
-    for datum in data.coord_list:
-        points.append(Coord(datum.x_coord, datum.y_coord))
+    for i in range(len(data.coord_list)):
+        temp = []
+
+        start = Coord(data.coord_list[i].x_coord, data.coord_list[i].y_coord)
+        end = Coord(data.coord_list[i + 1].x_coord, data.coord_list[i + 1].y_coord)
+
+        temp.append(start)
+        temp.append(end)
+
+        points.append(temp)
+        i += 1
 
     waypoints = planner.plan_route(points)
 
@@ -353,8 +362,9 @@ def init_control_node():
     global busy_pub
     tasks_sub = rospy.Subscriber('/robot/tasks', tasks, tasks_callback)
     busy_pub = rospy.Publisher('/robot/busy_bool', Bool, queue_size=10)
-    busy_pub.publish(busy_bool)
-    print "Published busy bool"
+    while not busy_bool.data:
+        busy_pub.publish(busy_bool)
+        print "Published busy bool"
 
     '''
     points = [[Coord(2, 3), Coord(4, 5)],
