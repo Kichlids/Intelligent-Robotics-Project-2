@@ -253,7 +253,7 @@ class Navigation():
             turn_msg.angular.z = -ANGULAR_SPEED_DEFAULT
         
         while self.laser.obstacle_detected:            
-            self.velocity_publish(turn_msg)
+            self.velocity_pub.publish(turn_msg)
 
 
 
