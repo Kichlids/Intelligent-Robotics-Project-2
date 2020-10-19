@@ -321,9 +321,12 @@ def init_control_node():
     rospy.init_node('control_node', anonymous = False)
     rate = rospy.Rate(10)
 
-    planner = Plan()
-    navigator = Navigation()
     odom = Odom()
+    laser = Laser()
+
+    planner = Plan()
+    navigator = Navigation(laser)
+    
     
     points = [[Coord(2, 3), Coord(4, 5)],
               [Coord(2, 6), Coord(1, 1)]]
