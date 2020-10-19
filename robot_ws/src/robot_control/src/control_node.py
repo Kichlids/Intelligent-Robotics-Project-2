@@ -5,6 +5,7 @@ import math
 
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
+from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Bool
 
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
