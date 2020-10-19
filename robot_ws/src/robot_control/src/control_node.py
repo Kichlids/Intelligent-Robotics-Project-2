@@ -240,8 +240,6 @@ class Navigation():
             t1 = rospy.Time.now().to_sec()
             current_angle = math.degrees(ANGULAR_SPEED_DEFAULT) * (t1 - t0)  
 
-
-     Turn until asymmetric obstacle is not visible
     
     def avoid(self):
 
@@ -276,12 +274,13 @@ class Navigation():
             
             rospy.sleep(1)
 
+            # Move forward
             vel_msg = Twist()
             vel_msg.linear.x = self.support.feet_to_meters(LINEAR_SPEED_DEFAULT)
             self.velocity_pub.publish(vel_msg)
             rospy.sleep(0.5)
             
-
+            # Caluclate remaining distance
             dist_diff = self.support.calculate_distance(my_location, waypoints[self.waypoint_index])
             
             if dist_diff < self.min_dist_to_dest:
@@ -320,9 +319,12 @@ def tasks_callback(data):
     busy_bool.data = True
     busy_pub.publish(busy_bool)
 
-    planner = Plan()
-    navigator = Navigation()
     odom = Odom()
+    laser = Laser()
+
+    planner = Plan()
+    navigator = Navigation(laser)
+
     points = []
 
     for datum in data.coord_list:
