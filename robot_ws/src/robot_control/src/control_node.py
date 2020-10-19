@@ -17,6 +17,13 @@ ANGULAR_SPEED_DEFAULT = 0.1
 # Obstacle avoidance threshold in ft, including the position of the laser scan sensor
 LASER_AVOIDANCE_DISTANCE = 1.5
 
+'''
+If robot moves away this much distance (ft),
+abandon this waypoint (and its destination if applicable)
+and move on to next waypoint
+'''
+NAV_FAILURE_DISTANCE_THRESHOLD = 2
+
 class Coord():
 
     def __init__(self, x, y):
@@ -171,10 +178,15 @@ class Support():
 
 class Navigation():
 
-    def __init__(self):
-        self.waypoint_index = 0
-        self.velocity_pub = rospy.Publisher('/cmd_vel_mux/input/navi', Twist, queue_size = 10)
+    def __init__(self, laser):
         self.support = Support()
+        self.laser = laser
+
+        self.waypoint_index = 0
+        self.min_dist_to_dest = float('inf')
+
+        self.velocity_pub = rospy.Publisher('/cmd_vel_mux/input/navi', Twist, queue_size = 10)
+        
     
     #Return angle of rotation in degrees
     def get_rotation_angle(self, destination):
@@ -228,13 +240,40 @@ class Navigation():
             t1 = rospy.Time.now().to_sec()
             current_angle = math.degrees(ANGULAR_SPEED_DEFAULT) * (t1 - t0)  
 
+
+     Turn until asymmetric obstacle is not visible
+    
+    def avoid(self):
+
+        turn_msg = Twist()
+
+        # Turn in the direction away from the closest obstacle
+        if self.laser.laser_min_index < (len(self.laser.laser_data.ranges) - 1) / 2:
+            turn_msg.angular.z = ANGULAR_SPEED_DEFAULT
+        else:
+            turn_msg.angular.z = -ANGULAR_SPEED_DEFAULT
+        
+        while self.laser.obstacle_detected:            
+            self.velocity_publish(turn_msg)
+
+
+
     # Move in increments and turn
     def move_dist(self, waypoints):
         dist_diff = self.support.calculate_distance(my_location, waypoints[self.waypoint_index])
+        
+        if dist_diff < self.min_dist_to_dest:
+            self.min_dist_to_dest = dist_diff
+        
         while dist_diff > 1:
             
-            # Rotating
-            self.rotate_to_angle(waypoints)
+            if self.laser.obstacle_detected:
+                # Avoid obstacle if detected
+                self.avoid()
+            else:
+                # Rotate towards destination
+                self.rotate_to_angle(waypoints)
+            
             rospy.sleep(1)
 
             vel_msg = Twist()
@@ -244,6 +283,17 @@ class Navigation():
             
 
             dist_diff = self.support.calculate_distance(my_location, waypoints[self.waypoint_index])
+            
+            if dist_diff < self.min_dist_to_dest:
+                self.min_dist_to_dest = dist_diff
+
+            if dist_diff - self.min_dist_to_dest > NAV_FAILURE_DISTANCE_THRESHOLD:
+                print('Failure to reach {}', waypoints[self.waypoint_index].print_coord())
+                if self.waypoint_index % 2 == 0:
+                    # waypoint was start
+                    self.waypoint_index += 1
+                break
+
 
     def navigate(self, waypoints):
         global my_location
