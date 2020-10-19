@@ -28,6 +28,8 @@ and move on to next waypoint
 '''
 NAV_FAILURE_DISTANCE_THRESHOLD = 2
 
+
+
 class Coord():
 
     def __init__(self, x, y):
@@ -79,7 +81,7 @@ class Laser():
         min_val = array[0]
         min_index = 0
         for i in range(len(array)):
-            if min_val > array[i]:
+            if min_val > array[i] or math.isnan(array[i]):
                 min_val = array[i]
                 min_index = i
         
@@ -95,6 +97,8 @@ class Laser():
 
         # Find minimum distance and index
         min_val, min_index = self.find_min_laser_data(ranges)
+
+        print(min_val)
         
         
         '''
@@ -303,11 +307,11 @@ class Navigation():
             
             if dist_diff < self.min_dist_to_dest:
                 self.min_dist_to_dest = dist_diff
-            
+            '''
             print('dist_diff ' + str(dist_diff))
             print('min_diff ' + str(self.min_dist_to_dest))
             print('T_diff ' + str(dist_diff - self.min_dist_to_dest))
-
+            '''
             if dist_diff - self.min_dist_to_dest > NAV_FAILURE_DISTANCE_THRESHOLD:
                 print('Failure to reach ' + str(waypoints[self.waypoint_index].to_string()))
                 if self.waypoint_index % 2 == 0:
