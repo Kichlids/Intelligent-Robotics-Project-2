@@ -294,7 +294,6 @@ class Navigation():
                     self.waypoint_index += 1
                 break
 
-
     def navigate(self, waypoints):
         global my_location
 
@@ -317,28 +316,57 @@ class Navigation():
         print('Finished')
         print(my_location.print_coord())
 
-def init_control_node():
-    rospy.init_node('control_node', anonymous = False)
-    rate = rospy.Rate(10)
-
-    odom = Odom()
-    laser = Laser()
+def tasks_callback(data):
+    busy_bool.data = True
+    busy_pub.publish(busy_bool)
 
     planner = Plan()
-    navigator = Navigation(laser)
-    
-    
-    points = [[Coord(2, 3), Coord(4, 5)],
-              [Coord(2, 6), Coord(1, 1)]]
+    navigator = Navigation()
+    odom = Odom()
+    points = []
 
-    busy_bool = Bool()
-    busy_bool.data = False
-    #busy_pub = rospy.Publisher('/robot/some_bool_to_tell_us_to_get_input', busy_bool,queue_size=10)
+    for datum in data.coord_list:
+        points.append(Coord(datum.x_coord, datum.y_coord))
 
     waypoints = planner.plan_route(points)
 
     navigator.navigate(waypoints)
 
+    busy_bool.data = False
+    busy_pub.publish(busy_bool)
+
+def init_control_node():
+    rospy.init_node('control_node', anonymous = False)
+    rate = rospy.Rate(10)
+
+    '''
+    global planner 
+    global navigator 
+    global odom
+    global points
+
+    planner = Plan()
+    navigator = Navigation()
+    odom = Odom()
+    points = []
+    '''
+    
+    global busy_bool 
+    busy_bool = Bool()
+    busy_bool.data = False
+
+    # First time ready
+    global busy_pub
+    busy_pub = rospy.Publisher('/robot/some_bool_to_tell_us_to_get_input', Bool, queue_size=10)
+    busy_pub.publish(busy_bool)
+
+    tasks_sub = rospy.Subscriber('/robot/tasks', tasks, tasks_callback)
+
+    '''
+    points = [[Coord(2, 3), Coord(4, 5)],
+              [Coord(2, 6), Coord(1, 1)]]
+    '''
+    #points = [[Coord(3, 3), Coord(0, 0)]]
 
 if __name__ == '__main__':
     try:
