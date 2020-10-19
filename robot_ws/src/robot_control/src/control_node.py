@@ -19,7 +19,7 @@ LINEAR_SPEED_DEFAULT = 0.5
 ANGULAR_SPEED_DEFAULT = 0.1
 
 # Obstacle avoidance threshold in ft, including the position of the laser scan sensor
-LASER_AVOIDANCE_DISTANCE = 1.5
+LASER_AVOIDANCE_DISTANCE = 2
 
 '''
 If robot moves away this much distance (ft),
@@ -107,7 +107,6 @@ class Laser():
         So the only other possible outcome is if distance read (nan) is below range_min, or threshold
         '''
         if math.isnan(min_val) or min_val < LASER_AVOIDANCE_DISTANCE:
-            #print(str(min_val) + ', ' + str(min_index))
             self.obstacle_detected = True
             
             self.laser_data = data
@@ -191,8 +190,7 @@ class Navigation():
         self.min_dist_to_dest = float('inf')
 
         self.velocity_pub = rospy.Publisher('/cmd_vel_mux/input/navi', Twist, queue_size = 10)
-        
-    
+         
     #Return angle of rotation in degrees
     def get_rotation_angle(self, destination):
         global my_location
@@ -238,7 +236,9 @@ class Navigation():
         else:
             turn_msg.angular.z = ANGULAR_SPEED_DEFAULT
 
-        while current_angle < abs(target_angle):    
+        while current_angle < abs(target_angle):  
+            if self.laser.obstacle_detected:
+                return  
             self.velocity_pub.publish(turn_msg)
             t1 = rospy.Time.now().to_sec()
             current_angle = math.degrees(ANGULAR_SPEED_DEFAULT) * (t1 - t0)  
@@ -267,34 +267,49 @@ class Navigation():
             self.min_dist_to_dest = dist_diff
         
         while dist_diff > 1:
-            '''
+            
             if self.laser.obstacle_detected:
                 # Avoid obstacle if detected
                 print('Avoiding...')
-                self.avoid()
+                #self.avoid()
+                turn_msg = Twist()
+
+                # Turn in the direction away from the closest obstacle
+                if self.laser.laser_min_index < (len(self.laser.laser_data.ranges) - 1) / 2:
+                    turn_msg.angular.z = ANGULAR_SPEED_DEFAULT
+                else:
+                    turn_msg.angular.z = -ANGULAR_SPEED_DEFAULT
+                
+                while self.laser.obstacle_detected:            
+                    self.velocity_pub.publish(turn_msg)
             else:
                 # Rotate towards destination
                 self.rotate_to_angle(waypoints)
-            '''
+            
 
-            self.rotate_to_angle(waypoints)
+            #self.rotate_to_angle(waypoints)
             
             rospy.sleep(1)
 
-            # Move forward
-            vel_msg = Twist()
-            vel_msg.linear.x = self.support.feet_to_meters(LINEAR_SPEED_DEFAULT)
-            self.velocity_pub.publish(vel_msg)
-            rospy.sleep(0.5)
+            if not self.laser.obstacle_detected:
+                # Move forward
+                vel_msg = Twist()
+                vel_msg.linear.x = self.support.feet_to_meters(LINEAR_SPEED_DEFAULT)
+                self.velocity_pub.publish(vel_msg)
+                rospy.sleep(0.5)
             
             # Caluclate remaining distance
             dist_diff = self.support.calculate_distance(my_location, waypoints[self.waypoint_index])
             
             if dist_diff < self.min_dist_to_dest:
                 self.min_dist_to_dest = dist_diff
+            
+            print('dist_diff ' + str(dist_diff))
+            print('min_diff ' + str(self.min_dist_to_dest))
+            print('T_diff ' + str(dist_diff - self.min_dist_to_dest))
 
             if dist_diff - self.min_dist_to_dest > NAV_FAILURE_DISTANCE_THRESHOLD:
-                print('Failure to reach {}', waypoints[self.waypoint_index].print_coord())
+                print('Failure to reach ' + str(waypoints[self.waypoint_index].print_coord()))
                 if self.waypoint_index % 2 == 0:
                     # waypoint was start
                     self.waypoint_index += 1
@@ -317,6 +332,7 @@ class Navigation():
             print('Arrived at: ' + waypoints[self.waypoint_index].print_coord())
 
             self.waypoint_index += 1
+            self.min_dist_to_dest = float('inf')
             rospy.sleep(1)
         
         print('Finished')
