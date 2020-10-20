@@ -11,7 +11,7 @@ from std_msgs.msg import Bool
 from robot_msgs.msg import coordinate
 from robot_msgs.msg import tasks
 
-from tf.transformations import euler_from_quaternion, quaternion_from_euler
+from tf.transformations import euler_from_quaternion
 
 # Speed ft/s
 LINEAR_SPEED_DEFAULT = 0.5
@@ -19,7 +19,7 @@ LINEAR_SPEED_DEFAULT = 0.5
 ANGULAR_SPEED_DEFAULT = 0.1
 
 # Obstacle avoidance threshold in ft, including the position of the laser scan sensor
-LASER_AVOIDANCE_DISTANCE = 2
+LASER_AVOIDANCE_DISTANCE = 2.3
 
 '''
 If robot moves away this much distance (ft),
