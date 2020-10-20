@@ -9,10 +9,14 @@ from std_msgs.msg import Bool
 # Class for reading input coordinates
 class InputReader:
 
+    # Create publisher for publishing tasks (coordinates) on the topic
+    # Create subscriber for subscribing to bool from control node
     def __init__(self):
         self.tasks_pub = rospy.Publisher('/robot/tasks', tasks, queue_size = 10)
         self.busy_sub = rospy.Subscriber('/robot/busy_bool', Bool, self.input_callback)
-
+    
+    # Callback function for actually getting coordinate input
+    # Only called when control node is not busy
     def input_callback(self, data):
         myTasks = tasks()
 
@@ -42,6 +46,7 @@ class InputReader:
             self.tasks_pub.publish(myTasks)
             rospy.sleep(5)
 
+# Initializes our node as 'input_node'
 def init_input_node():
     rospy.init_node('input_node', anonymous = False)
     rate = rospy.Rate(10)
@@ -49,7 +54,7 @@ def init_input_node():
     reader = InputReader()
 
     rospy.spin()
-
+# Main func, just calls node initialization
 if __name__ == '__main__':
     try:
         init_input_node()
