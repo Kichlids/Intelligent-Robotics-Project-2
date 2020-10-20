@@ -6,6 +6,7 @@ from robot_msgs.msg import coordinate
 from robot_msgs.msg import tasks
 from std_msgs.msg import Bool
 
+# Class for reading input coordinates
 class InputReader:
 
     def __init__(self):
