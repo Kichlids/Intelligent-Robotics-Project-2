@@ -108,7 +108,7 @@ class Laser():
         # Find minimum distance and index
         min_val, min_index = self.find_min_laser_data(ranges)
 
-        print(min_val)
+        #print(min_val)
         
         
         '''
@@ -240,7 +240,7 @@ class Navigation():
         current_angle = 0
         
         target_angle = self.get_rotation_angle(waypoints[self.waypoint_index])
-        print('Target angle: ' + str(target_angle))
+        #print('Target angle: ' + str(target_angle))
 
         # Determine the direction to turn
         # Flip turn angle: positive turns right, negative turns left
@@ -284,7 +284,7 @@ class Navigation():
             
             if self.laser.obstacle_detected:
                 # Avoid obstacle if detected
-                print('Avoiding...')
+                #print('Avoiding...')
                 #self.avoid()
                 turn_msg = Twist()
 
@@ -337,14 +337,14 @@ class Navigation():
         # Assuming robot faces forward (+y direction) at 0,0 initially
         while self.waypoint_index < len(waypoints):
             print('Heading to ' + waypoints[self.waypoint_index].to_string())
-            print('From ' + my_location.to_string())
+            #print('From ' + my_location.to_string())
             rospy.sleep(1)
             
             self.move_dist(waypoints)
             # Do checks for walls in move_small too?
             # Call rotate_to_angle in move small as well?
 
-            print(my_location.to_string())
+            #print(my_location.to_string())
             print('Arrived at: ' + waypoints[self.waypoint_index].to_string())
 
             self.waypoint_index += 1
@@ -352,7 +352,7 @@ class Navigation():
             rospy.sleep(1)
         
         print('Finished')
-        print(my_location.to_string())
+        #print(my_location.to_string())
 
 def tasks_callback(data):
     busy_bool.data = True
